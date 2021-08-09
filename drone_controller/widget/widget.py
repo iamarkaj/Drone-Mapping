@@ -6,7 +6,7 @@ import threading
 import sys
 
 from joystick import Joystick
-from roverHandler import RoverHandler
+from rover_handler import RoverHandler
 
 
 class Widget(QtWidgets.QWidget):

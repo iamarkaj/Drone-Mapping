@@ -4,6 +4,12 @@
 ![](https://img.shields.io/badge/ROS1-Noetic-blue)
 ![](https://img.shields.io/badge/Gazebo-11-green)
 
+## Teaser
+
+<a href="https://youtu.be/L2CJCvOHqHQ">
+<img src="drone_controller/resources/controller.gif" alt="stream" width="300"/>
+</a>
+
 ## Usage
 
 ```bash
@@ -13,11 +19,9 @@ roscd && catkin build
 ```
 
 ```bash
-cd ~/Drone-Mapping
-roslaunch drone_mapping.launch
+roslaunch ~/Drone-Mapping/drone_mapping.launch
 ```
 
 ```bash
-cd ~/Drone-Mapping/drone_controller/widget
-python widget.py
+python ~/Drone-Mapping/drone_controller/widget/widget.py
 ```
