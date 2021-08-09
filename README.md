@@ -7,7 +7,7 @@
 ## Teaser
 
 <a href="https://youtu.be/L2CJCvOHqHQ">
-<img src="drone_controller/resources/controller.gif" alt="stream" width="300"/>
+<img src="drone_controller/resources/controller.gif" alt="stream" width="600"/>
 </a>
 
 ## Usage
