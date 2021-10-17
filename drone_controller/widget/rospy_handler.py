@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import rospy
-from topicService import TopicService
+from topic_service import TopicService
 
 
 class RosHandler:
