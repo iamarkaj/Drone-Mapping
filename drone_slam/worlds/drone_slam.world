@@ -12,17 +12,9 @@
             <uri>model://ground_plane</uri>
         </include>
 
-        <scene>
-			<sky>
-				<clouds>
-				    <speed>12</speed>
-				</clouds>
-			</sky>
-		</scene>
-
         <!-- Labyrinth -->
         <include>
-            <uri>model://simple_labyrinth</uri>
+            <uri>model://simple_labyrinth_10</uri>
         </include>
 
         <!-- Gazebo required specifications -->
