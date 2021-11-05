@@ -5,13 +5,25 @@ find_package(catkin REQUIRED COMPONENTS roscpp pcl_ros laser_geometry)
 
 catkin_package()
 
-install(DIRECTORY
-  models
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+include_directories(include 
+    ${catkin_INCLUDE_DIRS}
 )
 
-include_directories(include ${catkin_INCLUDE_DIRS})
+install(DIRECTORY
+    models
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
-add_executable(pcl_icp src/pcl_icp.cpp)
-target_link_libraries(pcl_icp ${catkin_LIBRARIES})
-add_dependencies(pcl_icp ${pcl_icp_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(pcl_icp_node
+    src/pcl_icp_node.cpp
+    src/pcl_icp.cpp
+)
+
+add_dependencies(pcl_icp_node
+    ${pcl_icp_EXPORTED_TARGETS} 
+    ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(pcl_icp_node
+    ${catkin_LIBRARIES}
+)

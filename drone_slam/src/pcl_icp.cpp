@@ -1,68 +1,73 @@
-#include <ros/ros.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/filters/filter.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl/registration/icp.h>
-#include <pcl/filters/voxel_grid.h>
-#include <sensor_msgs/PointCloud2.h>
-
-// Demo PCL ICP ROS
-
-ros::Publisher _pub;
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZRGB>);
+#include "drone_slam/pcl_icp.h"
 
 
-void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& next_input) {
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr _cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>);;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>);;
+Slam::Slam():_nh(ros::NodeHandle())
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudin (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudout (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudin_ (new pcl::PointCloud<pcl::PointXYZ>);
 
-    pcl::fromROSMsg (*next_input, *_cloud_in);
+    _cloud_in = cloudin_;
+    cloud_out = cloudout;
+    cloud_in = cloudin;
+
+    vg.setInputCloud(_cloud_in);
+    vg.setLeafSize(0.01f, 0.01f, 0.01f);
+
+    icp.setMaxCorrespondenceDistance(0.05);
+    icp.setMaximumIterations(25);
+    icp.setTransformationEpsilon(1e-8);
+    icp.setEuclideanFitnessEpsilon(1);
+
+    _sub_laser = _nh.subscribe("/laser/scan", 100, &Slam::cb_laser, this);
+    _sub_odom = _nh.subscribe("/mavros/local_position/odom", 100, &Slam::cb_odom, this);
+
+    _pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("pcl_icp_output", 10);
+}
+
+void Slam::cb_odom(const nav_msgs::Odometry::ConstPtr& msg)
+{
+    robot_x = msg->pose.pose.position.x;
+    robot_y = msg->pose.pose.position.y;
+    robot_z = msg->pose.pose.position.z;
+}
+
+
+void Slam::cb_laser(const sensor_msgs::LaserScan::ConstPtr& scan_in) 
+{
+    projector.projectLaser(*scan_in, next_input);
+    next_input.header.frame_id = "/laser";
+    next_input.header.stamp = scan_in->header.stamp;
+
+    pcl::fromROSMsg(next_input, *_cloud_in);
 
     std::vector<int> indices;
     pcl::removeNaNFromPointCloud(*_cloud_in, *_cloud_in, indices);
-
-    pcl::VoxelGrid<pcl::PointXYZRGB> vg;
-    vg.setInputCloud(_cloud_in);
-    vg.setLeafSize(0.2f, 0.2f, 0.2f);
+    
     vg.filter(*cloud_in);
 
-    if (cloud_out->points.size() != 0) {
-        pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
+    for(auto& p:cloud_in->points)
+    {
+        p.x += robot_x;
+        p.y += robot_y;
+        p.z += robot_z;
+    }
+
+    if (cloud_out->points.size() != 0) 
+    {
+        pcl::PointCloud<pcl::PointXYZ> tmp;
         icp.setInputSource(cloud_in);
         icp.setInputTarget(cloud_out);
-
-        icp.setMaxCorrespondenceDistance(0.05);
-        icp.setMaximumIterations(25);
-        icp.setTransformationEpsilon(1e-8);
-        icp.setEuclideanFitnessEpsilon(1);
-
-        pcl::PointCloud<pcl::PointXYZRGB> tmp;
         icp.align(tmp);
         *cloud_out = *cloud_out + tmp;
 
         std::cerr << cloud_out->points.size() << std::endl;
-
-    } else {
+    } 
+    else 
+    {
         *cloud_out = *cloud_in;
     }
 
-    sensor_msgs::PointCloud2 output;
     pcl::toROSMsg(*cloud_out, output);
     _pub.publish(output);
-}
-
-
-int main(int argc, char** argv) {
-    ros::init(argc, argv, "pcl_icp");
-    ros::NodeHandle nh;
-
-    ros::Subscriber sub = nh.subscribe("/camera/depth/points", 10, cloud_cb);
-    _pub = nh.advertise<sensor_msgs::PointCloud2>("pcl_icp_output", 1);
-
-    std::cout << "Publishing\n";
-    while(ros::ok()) ros::spin();
-
-    ros::shutdown();
-    std::cout << "\nClosed\n";
 }
