@@ -22,18 +22,19 @@ private:
     ros::NodeHandle _nh;
     ros::Publisher _pub;
     ros::Subscriber _sub_laser, _sub_odom;
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud_in, cloud_out, cloud_in;
-    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
     
     pcl::VoxelGrid<pcl::PointXYZ> vg;
-    sensor_msgs::PointCloud2 next_input, output;
+    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud_in, cloud_in, cloud_out;
+
     laser_geometry::LaserProjection projector;
+    sensor_msgs::PointCloud2 next_input, output;
+    
+    float robot_x, robot_y, robot_z;
 
-    float robot_x = 0.0, robot_y = 0.0, robot_z = 0.0;
-
-    void cb_laser(const sensor_msgs::LaserScan::ConstPtr& scan_in) ;
+    void initialize();
     void cb_odom(const nav_msgs::Odometry::ConstPtr& msg);
+    void cb_laser(const sensor_msgs::LaserScan::ConstPtr& scan_in);
 };
 
 #endif

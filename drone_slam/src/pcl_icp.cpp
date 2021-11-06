@@ -3,13 +3,18 @@
 
 Slam::Slam():_nh(ros::NodeHandle())
 {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudin (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudout (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudin_ (new pcl::PointCloud<pcl::PointXYZ>);
+    _sub_laser = _nh.subscribe("/laser/scan", 100, &Slam::cb_laser, this);
+    _sub_odom = _nh.subscribe("/mavros/local_position/odom", 100, &Slam::cb_odom, this);
+    _pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("pcl_icp_output", 10);
 
-    _cloud_in = cloudin_;
-    cloud_out = cloudout;
-    cloud_in = cloudin;
+    Slam::initialize();
+}
+
+void Slam::initialize()
+{
+    _cloud_in.reset(new pcl::PointCloud<pcl::PointXYZ>());
+    cloud_in.reset(new pcl::PointCloud<pcl::PointXYZ>());
+    cloud_out.reset(new pcl::PointCloud<pcl::PointXYZ>());
 
     vg.setInputCloud(_cloud_in);
     vg.setLeafSize(0.01f, 0.01f, 0.01f);
@@ -19,10 +24,10 @@ Slam::Slam():_nh(ros::NodeHandle())
     icp.setTransformationEpsilon(1e-8);
     icp.setEuclideanFitnessEpsilon(1);
 
-    _sub_laser = _nh.subscribe("/laser/scan", 100, &Slam::cb_laser, this);
-    _sub_odom = _nh.subscribe("/mavros/local_position/odom", 100, &Slam::cb_odom, this);
+    robot_x = 0.0;
+    robot_y = 0.0;
+    robot_z = 0.0;
 
-    _pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("pcl_icp_output", 10);
 }
 
 void Slam::cb_odom(const nav_msgs::Odometry::ConstPtr& msg)
