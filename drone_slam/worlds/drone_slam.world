@@ -14,7 +14,7 @@
 
         <!-- Labyrinth -->
         <include>
-            <uri>model://simple_labyrinth_10</uri>
+            <uri>model://dslam_simple_labyrinth</uri>
         </include>
 
         <!-- Gazebo required specifications -->

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <sdf version="1.3">
-    <model name="simple_labyrinth_10">
+    <model name="dslam_simple_labyrinth">
         <link name="Wall_1">
             <collision name="Wall_1_Collision">
                 <geometry>

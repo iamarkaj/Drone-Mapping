@@ -12,7 +12,7 @@
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="iris"/>
-    <arg name="model" default="iris_depth_camera_rplidar"/>
+    <arg name="model" default="dslam_iris_depth_camera_laser"/>
     <arg name="world" default="$(find drone_slam)/worlds/drone_slam.world"/>
     <arg name="sdf" default="$(find drone_slam)/models/$(arg model)/$(arg model).sdf"/>
     

@@ -1,62 +1,68 @@
 #include "drone_slam/pcl_icp.h"
 
-
-Slam::Slam():_nh(ros::NodeHandle())
+dslam::Dslam::Dslam():nh(ros::NodeHandle())
 {
-    _sub_laser = _nh.subscribe("/laser/scan", 100, &Slam::cb_laser, this);
-    _sub_odom = _nh.subscribe("/mavros/local_position/odom", 100, &Slam::cb_odom, this);
-    _pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("pcl_icp_output", 10);
+    sub_cloud = nh.subscribe("/camera/depth/points", 1, &dslam::Dslam::cb_cloud, this);
+    sub_odom = nh.subscribe("/mavros/local_position/odom", 1, &dslam::Dslam::cb_odom, this);
+    pub_cloud = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("icp/cloud/output", 1);
 
-    Slam::initialize();
+    dslam::Dslam::initialize();
 }
 
-void Slam::initialize()
+
+void dslam::Dslam::initialize()
 {
     _cloud_in.reset(new pcl::PointCloud<pcl::PointXYZ>());
     cloud_in.reset(new pcl::PointCloud<pcl::PointXYZ>());
     cloud_out.reset(new pcl::PointCloud<pcl::PointXYZ>());
-
-    vg.setInputCloud(_cloud_in);
-    vg.setLeafSize(0.01f, 0.01f, 0.01f);
 
     icp.setMaxCorrespondenceDistance(0.05);
     icp.setMaximumIterations(25);
     icp.setTransformationEpsilon(1e-8);
     icp.setEuclideanFitnessEpsilon(1);
 
+    // tree = new octomap::OcTree(0.05);
+
     robot_x = 0.0;
     robot_y = 0.0;
     robot_z = 0.0;
-
-}
-
-void Slam::cb_odom(const nav_msgs::Odometry::ConstPtr& msg)
-{
-    robot_x = msg->pose.pose.position.x;
-    robot_y = msg->pose.pose.position.y;
-    robot_z = msg->pose.pose.position.z;
 }
 
 
-void Slam::cb_laser(const sensor_msgs::LaserScan::ConstPtr& scan_in) 
+void dslam::Dslam::cb_odom(const nav_msgs::Odometry::ConstPtr& msg)
 {
-    projector.projectLaser(*scan_in, next_input);
-    next_input.header.frame_id = "/laser";
-    next_input.header.stamp = scan_in->header.stamp;
+    data[0] = msg->pose.pose.orientation.x;
+    data[1] = msg->pose.pose.orientation.y;
+    data[2] = msg->pose.pose.orientation.z;
+    data[3] = msg->pose.pose.orientation.w;
+    
+    Eigen::Quaterniond q(data[3], data[0], data[1], data[2]);
+    Eigen::Isometry3d t(q);
+    t(0,3) = msg->pose.pose.position.x;
+    t(1,3) = msg->pose.pose.position.y;
+    t(2,3) = msg->pose.pose.position.z;
 
-    pcl::fromROSMsg(next_input, *_cloud_in);
+    _t = t;
+}
 
+
+void dslam::Dslam::cb_cloud(const sensor_msgs::PointCloud2ConstPtr& next_input) 
+{
+    pcl::fromROSMsg(*next_input, *_cloud_in);
+
+    ////////////////////////////////////////////////////////////////////
     std::vector<int> indices;
     pcl::removeNaNFromPointCloud(*_cloud_in, *_cloud_in, indices);
     
+    ////////////////////////////////////////////////////////////////////
+    vg.setInputCloud(_cloud_in);
+    vg.setLeafSize(0.2f, 0.2f, 0.2f);
     vg.filter(*cloud_in);
 
-    for(auto& p:cloud_in->points)
-    {
-        p.x += robot_x;
-        p.y += robot_y;
-        p.z += robot_z;
-    }
+    ////////////////////////////////////////////////////////////////////
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _tmp(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::transformPointCloud(*cloud_in, *_tmp, _t.matrix());
+    *cloud_in = *_tmp;
 
     if (cloud_out->points.size() != 0) 
     {
@@ -64,15 +70,35 @@ void Slam::cb_laser(const sensor_msgs::LaserScan::ConstPtr& scan_in)
         icp.setInputSource(cloud_in);
         icp.setInputTarget(cloud_out);
         icp.align(tmp);
-        *cloud_out = *cloud_out + tmp;
-
-        std::cerr << cloud_out->points.size() << std::endl;
+        *cloud_out = tmp;
     } 
     else 
     {
         *cloud_out = *cloud_in;
     }
 
+    ////////////////////////////////////////////////////////////////////
+    // octomap::Pointcloud cloud_octo;
+    // for (auto &p:cloud_in->points)
+    // {
+    //     cloud_octo.push_back(p.x, p.y, p.z);
+    // }
+    // tree->insertPointCloud(cloud_octo, octomap::point3d(_t(0,3), _t(1,3), _t(2,3)));
+    // tree->updateInnerOccupancy();
+
+    // octomap_msgs::Octomap _output;
+    // octomap_msgs::fullMapToMsg(*tree, _output);
+
+    ////////////////////////////////////////////////////////////////////
     pcl::toROSMsg(*cloud_out, output);
-    _pub.publish(output);
+    pub_cloud.publish(output);
+}
+
+
+int main(int argc, char** argv) 
+{
+    ros::init(argc, argv, "icp");
+    std::cout<<"Ready"<<std::endl;
+    dslam::Dslam s;
+    ros::spin();
 }
