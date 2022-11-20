@@ -2,12 +2,25 @@
 <package format="3">
     <name>drone_slam</name>
     <version>0.0.1</version>
-    <description>The drone SLAM package</description>
+    <description>The drone_slam package</description>
+    
     <maintainer email="arkajbasak1211@gmail.com">Arka</maintainer>
     <author email="arkajbasak1211@gmail.com">Arka</author>
     <license>MIT</license>
+    
     <buildtool_depend>catkin</buildtool_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>pcl_ros</build_depend>
+    <build_depend>laser_geometry</build_depend>
+    <build_depend>octomap</build_depend>
+
+    <exec_depend>roscpp</exec_depend>
+    <exec_depend>pcl_ros</exec_depend>
+    <exec_depend>laser_geometry</exec_depend>
+    <exec_depend>octomap</exec_depend>
+    
     <export>
         <gazebo_ros plugin_path="${prefix}/lib" gazebo_media_path="${prefix}"/>
     </export>
+
 </package>

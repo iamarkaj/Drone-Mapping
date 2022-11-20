@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <sdf version="1.5">
-    <model name='iris_depth_camera_rplidar'>
+    <model name='dslam_iris_depth_camera_laser'>
         <include>
-            <uri>model://iris</uri>
+            <uri>model://dslam_iris</uri>
         </include>
         <include>
-            <uri>model://depth_camera</uri>
+            <uri>model://dslam_depth_camera</uri>
             <pose>0.1 0 0 0 0 0</pose>
         </include>
         <include>
-            <uri>model://rplidar</uri>
+            <uri>model://dslam_velodyne_laser</uri>
             <pose>0 0 0.1 0 0 0</pose>
         </include>
-        <joint name="depth_camera_joint" type="revolute">
-            <child>depth_camera::link</child>
-            <parent>iris::base_link</parent>
+        <joint name="dslam_depth_camera_joint" type="fixed">
+            <child>dslam_depth_camera::link</child>
+            <parent>dslam_iris::base_link</parent>
             <axis>
                 <xyz>0 0 1</xyz>
                 <limit>
@@ -22,11 +22,10 @@
                     <lower>0</lower>
                 </limit>
             </axis>
-            <!-- <origin xyz="0.0 0.0 0.0 0.2825" -->
         </joint>
-        <joint name="rplidar_joint" type="revolute">
-            <child>rplidar::link</child>
-            <parent>iris::base_link</parent>
+        <joint name="dslam_velodyne_laser_joint" type="fixed">
+            <child>dslam_velodyne_laser::link</child>
+            <parent>dslam_iris::base_link</parent>
             <axis>
                 <xyz>0 0 1</xyz>
                 <limit>
